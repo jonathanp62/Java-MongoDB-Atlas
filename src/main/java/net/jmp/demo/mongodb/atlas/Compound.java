@@ -21,6 +21,8 @@ import com.mongodb.client.model.*;
 
 import java.util.*;
 
+import java.util.concurrent.TimeUnit;
+
 import org.bson.Document;
 
 import org.slf4j.LoggerFactory;
@@ -93,16 +95,67 @@ final class Compound {
 
     private void findAndUpdate() {
         this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.eq("color", "green");
+        final var projection = Projections.excludeId();
+        final var update = Updates.set("food", "pizza");
+
+        final var options = new FindOneAndUpdateOptions().
+                projection(projection).
+                upsert(true).
+                maxTime(5, TimeUnit.SECONDS).
+                returnDocument(ReturnDocument.AFTER);
+
+        // The found document is in the state AFTER the update
+
+        final var document = collection.findOneAndUpdate(filter, update, options);
+
+        Helpers.printOneDocument(document, this.logger);
+
         this.logger.exit();
     }
 
     private void findAndReplace() {
         this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.eq("color", "green");
+        final var projection = Projections.excludeId();
+        final var newDocument = new Document("music", "classical").append("color", "green");
+
+        final var options = new FindOneAndReplaceOptions().
+                projection(projection).
+                upsert(true).
+                maxTime(5, TimeUnit.SECONDS).
+                returnDocument(ReturnDocument.AFTER);
+
+        // The found document is in the state AFTER the update
+
+        final var document = collection.findOneAndReplace(filter, newDocument, options);
+
+        Helpers.printOneDocument(document, this.logger);
+
         this.logger.exit();
     }
 
     private void findAndDelete() {
         this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.empty();
+        final var sort = Sorts.descending("_id");
+        final var options = new FindOneAndDeleteOptions().sort(sort);
+
+        // The deleted document is returned
+
+        final var document = collection.findOneAndDelete(filter, options);
+
+        Helpers.printOneDocument(document, this.logger);
+
         this.logger.exit();
     }
 

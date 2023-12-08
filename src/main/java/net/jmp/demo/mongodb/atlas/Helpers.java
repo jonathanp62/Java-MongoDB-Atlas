@@ -60,6 +60,15 @@ final class Helpers {
         logger.exit();
     }
 
+    static void printOneDocument(final Document document, final XLogger logger) {
+        logger.entry(document);
+
+        if (document != null && logger.isInfoEnabled())
+            logger.info(document.toJson());
+
+        logger.exit();
+    }
+
     static void printCursor(final MongoCursor<Document> mongoCursor,
                              final String methodName,
                              final XLogger logger) {

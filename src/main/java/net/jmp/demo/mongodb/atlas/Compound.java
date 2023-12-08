@@ -50,14 +50,16 @@ final class Compound {
 
         this.insertData();
 
-        this.findAndUpdate();
-        this.findAndReplace();
-        this.findAndDelete();
+        try {
+            this.findAndUpdate();
+            this.findAndReplace();
+            this.findAndDelete();
 
-        this.raceCondition();
-        this.noRaceCondition();
-
-        this.deleteData();
+            this.raceCondition();
+            this.noRaceCondition();
+        } finally {
+            this.deleteData();
+        }
 
         this.logger.info("Ending compound operations...");
         this.logger.exit();
@@ -68,7 +70,8 @@ final class Compound {
 
         final var jsonDocuments = List.of(
                 "{ \"_id\": 1, \"food\": \"donut\", \"color\": \"green\" }",
-                "{ \"_id\": 2, \"food\": \"pear\", \"color\": \"yellow\" }"
+                "{ \"_id\": 2, \"food\": \"pear\", \"color\": \"yellow\" }",
+                "{ \"_id\": 3, \"guest\": null, \"room\": \" Blue Room\", \"reserved\": false }"
         );
 
         final List<Document> documents = new ArrayList<>();
@@ -147,7 +150,7 @@ final class Compound {
         final var database = this.mongoClient.getDatabase(this.dbName);
         final var collection = database.getCollection(this.collectionName);
         final var filter = Filters.empty();
-        final var sort = Sorts.descending("_id");
+        final var sort = Sorts.ascending("_id");
         final var options = new FindOneAndDeleteOptions().sort(sort);
 
         // The deleted document is returned
@@ -161,11 +164,50 @@ final class Compound {
 
     private void raceCondition() {
         this.logger.entry();
+
+        final Runnable john = () -> this.bookRoomWithRaceCondition("John");
+        final Runnable jane = () -> this.bookRoomWithRaceCondition("Jane");
+
+        final var t1 = new Thread(john);
+        final var t2 = new Thread(jane);
+
+        t1.start();
+        t2.start();
+
+        try {
+            t1.join();
+            t2.join();
+        } catch (final InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+
         this.logger.exit();
     }
 
     private void noRaceCondition() {
         this.logger.entry();
+        this.logger.exit();
+    }
+
+    private void bookRoomWithRaceCondition(final String name) {
+        this.logger.entry(name);
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.eq("reserved", false);
+        final var room = collection.find(filter).first();
+
+        if (room == null) {
+            this.logger.warn("Sorry, {}, a room is not available", name);
+        } else {
+            this.logger.info("Congratulations, {}, a room is available", name);
+
+            final var update = Updates.combine(Updates.set("reserved", true), Updates.set("guest", name));
+            final var roomFilter = Filters.eq("_id", room.get("_id", Integer.class));
+
+            collection.updateOne(roomFilter, update);
+        }
+
         this.logger.exit();
     }
 

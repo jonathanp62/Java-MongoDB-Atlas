@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ (#)logback.xml 0.9.0   12/07/2023
+ (#)logback.xml 0.8.0   12/06/2023
+
+ Copyright (c) Jonathan M. Parker
+ All Rights Reserved.
+
+ @author    Jonathan Parker
+ @version   0.9.0
+ @since     0.8.0
+-->
+
+<configuration scan="false" scanPeriod="60 seconds" packagingData="false" debug="false">
+  <appender name="MAIN" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{ISO8601} %-5level [%logger] [%M] %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="net.jmp.demo.mongodb.atlas.Bulk" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Compound" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Delete" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Find" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Insert" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Main" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.UpdateAndReplace" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.UpdateArrays" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="net.jmp.demo.mongodb.atlas.Upsert" additivity="false" level="info">
+    <appender-ref ref="MAIN" />
+  </logger>
+
+  <logger name="org.mongodb.driver.client" additivity="false" level="off">
+    <appender-ref ref="MAIN" />
+  </logger>
+  <logger name="org.mongodb.driver.cluster" additivity="false" level="off">
+    <appender-ref ref="MAIN" />
+  </logger>
+
+  <root level="info">
+    <appender-ref ref="MAIN" />
+  </root>
+</configuration>

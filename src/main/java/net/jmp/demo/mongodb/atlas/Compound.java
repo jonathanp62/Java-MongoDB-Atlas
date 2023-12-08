@@ -56,6 +56,7 @@ final class Compound {
             this.findAndDelete();
 
             this.raceCondition();
+            this.resetRaceCondition();
             this.noRaceCondition();
         } finally {
             this.deleteData();
@@ -165,11 +166,49 @@ final class Compound {
     private void raceCondition() {
         this.logger.entry();
 
-        final Runnable john = () -> this.bookRoomWithRaceCondition("John");
-        final Runnable jane = () -> this.bookRoomWithRaceCondition("Jane");
+        // Either John or Jane will get the room
 
-        final var t1 = new Thread(john);
-        final var t2 = new Thread(jane);
+        this.startRace(
+                () -> this.bookRoomWithRaceCondition("John"),
+                () -> this.bookRoomWithRaceCondition("Jane")
+        );
+
+        this.logger.exit();
+    }
+
+    private void resetRaceCondition() {
+        this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.eq("_id", 3);
+        final var update = Updates.combine(Updates.set("reserved", false), Updates.set("guest", null));
+
+        final var result = collection.updateOne(filter, update);
+
+        this.logger.info("{} row(s) were reset between race condition operations", result.getModifiedCount());
+
+        this.logger.exit();
+    }
+
+    private void noRaceCondition() {
+        this.logger.entry();
+
+        // Only Susie will get the room
+
+        this.startRace(
+                () -> this.bookRoomWithoutRaceCondition("Susie"),
+                () -> this.bookRoomWithoutRaceCondition("Laura")
+        );
+
+        this.logger.exit();
+    }
+
+    private void startRace(final Runnable runnable1, final Runnable runnable2) {
+        this.logger.entry(runnable1, runnable2);
+
+        final var t1 = new Thread(runnable1);
+        final var t2 = new Thread(runnable2);
 
         t1.start();
         t2.start();
@@ -181,11 +220,6 @@ final class Compound {
             Thread.currentThread().interrupt();
         }
 
-        this.logger.exit();
-    }
-
-    private void noRaceCondition() {
-        this.logger.entry();
         this.logger.exit();
     }
 
@@ -206,6 +240,25 @@ final class Compound {
             final var roomFilter = Filters.eq("_id", room.get("_id", Integer.class));
 
             collection.updateOne(roomFilter, update);
+        }
+
+        this.logger.exit();
+    }
+
+    private void bookRoomWithoutRaceCondition(final String name) {
+        this.logger.entry(name);
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+        final var filter = Filters.eq("reserved", false);
+        final var update = Updates.combine(Updates.set("reserved", true), Updates.set("guest", name));
+
+        final var room = collection.findOneAndUpdate(filter, update);
+
+        if (room == null) {
+            this.logger.warn("Sorry, {}, a room is not available", name);
+        } else {
+            this.logger.info("Congratulations, {}, a room is available", name);
         }
 
         this.logger.exit();

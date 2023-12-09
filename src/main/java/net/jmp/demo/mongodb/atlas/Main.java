@@ -1,6 +1,7 @@
 package net.jmp.demo.mongodb.atlas;
 
 /*
+ * (#)Main.java 0.10.0  12/09/2023
  * (#)Main.java 0.9.0   12/07/2023
  * (#)Main.java 0.8.0   12/06/2023
  *
@@ -8,7 +9,7 @@ package net.jmp.demo.mongodb.atlas;
  * All Rights Reserved.
  *
  * @author    Jonathan Parker
- * @version   0.9.0
+ * @version   0.10.0
  * @since     0.8.0
  */
 
@@ -55,6 +56,7 @@ public final class Main {
                 new Bulk(props, mongoClient).run();
                 new Query(props, mongoClient).run();
                 new Compound(props, mongoClient).run();
+                new Aggregation(props, mongoClient).run();
             } finally {
                 this.logger.info("Disconnected from {}", mongoDbUri);
             }

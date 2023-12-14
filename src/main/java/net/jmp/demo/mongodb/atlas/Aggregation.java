@@ -11,6 +11,7 @@ package net.jmp.demo.mongodb.atlas;
  * @since     0.10.0
  */
 
+import com.mongodb.ExplainVerbosity;
 import com.mongodb.client.MongoClient;
 
 import com.mongodb.client.model.*;
@@ -47,6 +48,8 @@ final class Aggregation {
         try {
             this.insertData();
             this.basic();
+            this.explain();
+            this.expression();
         } finally {
             this.dropCollection();  // Will delete any documents in the collection
         }
@@ -109,6 +112,62 @@ final class Aggregation {
          * {"_id": 4, "count": 2} // Two four-star bakeries
          * {"_id": 5, "count": 1} // One five-star bakery
          */
+
+        this.logger.exit();
+    }
+
+    private void explain() {
+        this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+
+        final var aggregationIterable = collection.aggregate(
+                Arrays.asList(
+                        Aggregates.match(Filters.eq("categories", "Bakery")),
+                        Aggregates.group("$stars", Accumulators.sum("count", 1))
+                )
+        );
+
+        final Document explanation = aggregationIterable.explain(ExplainVerbosity.EXECUTION_STATS);
+
+        @SuppressWarnings("unchecked")
+        final List<Document> stages = explanation.get("stages", List.class);
+
+        if (stages != null) {
+            final List<String> keys = Arrays.asList("queryPlanner", "winningPlan");
+
+            for (final var stage : stages) {
+                final var cursorStage = stage.get("$cursor", Document.class);
+
+                if (cursorStage != null && (this.logger.isInfoEnabled()))
+                    this.logger.info(cursorStage.getEmbedded(keys, Document.class).toJson());
+            }
+        }
+
+        this.logger.exit();
+    }
+
+    private void expression() {
+        this.logger.entry();
+
+        final var database = this.mongoClient.getDatabase(this.dbName);
+        final var collection = database.getCollection(this.collectionName);
+
+        collection.aggregate(
+                Arrays.asList(
+                        Aggregates.project(
+                                Projections.fields(
+                                        Projections.excludeId(),
+                                        Projections.include("name"),
+                                        Projections.computed(
+                                                "firstCategory",
+                                                new Document("$arrayElemAt", Arrays.asList("$categories", 0))
+                                        )
+                                )
+                        )
+                )
+        ).forEach(doc -> Helpers.printOneDocument(doc, this.logger));
 
         this.logger.exit();
     }

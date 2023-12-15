@@ -1,13 +1,14 @@
 package net.jmp.demo.mongodb.atlas;
 
 /*
+ * (#)Aggregation.java  0.10.1  12/15/2023
  * (#)Aggregation.java  0.10.0  12/09/2023
  *
  * Copyright (c) Jonathan M. Parker
  * All Rights Reserved.
  *
  * @author    Jonathan Parker
- * @version   0.10.0
+ * @version   0.10.1
  * @since     0.10.0
  */
 
@@ -143,6 +144,10 @@ final class Aggregation {
                 if (cursorStage != null && (this.logger.isInfoEnabled()))
                     this.logger.info(cursorStage.getEmbedded(keys, Document.class).toJson());
             }
+        } else {
+            /* Provided as the stages variable seems to always be null */
+
+            Helpers.printOneDocument(explanation, this.logger);
         }
 
         this.logger.exit();
